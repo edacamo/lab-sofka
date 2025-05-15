@@ -1,0 +1,3 @@
+URL: jdbc:postgresql://dpg-cvddit5ds78s7387k5r0-a.oregon-postgres.render.com:5432/dbtestdevsu
+Usuario: adrius
+Password: 3jCC4Nw2ssSk37xUNLaHqqqaXTcK8i7w
