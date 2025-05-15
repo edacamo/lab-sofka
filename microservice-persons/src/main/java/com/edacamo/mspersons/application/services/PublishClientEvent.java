@@ -11,7 +11,7 @@ import org.springframework.stereotype.Component;
 @Slf4j
 @Component
 @AllArgsConstructor
-public class PublishClientCreatedEvent {
+public class PublishClientEvent {
 
     private final KafkaTemplate<String, ClientEvent> kafkaTemplate;
     private final KafkaTemplate<String, ClientDeletedEvent> clientDeletedEventKafkaTemplate;
@@ -30,13 +30,13 @@ public class PublishClientCreatedEvent {
         );
 
         log.info("Publicando evento de cliente creado: {}", event);
-        kafkaTemplate.send("client-created-events", event.getClienteId(), event);
+        kafkaTemplate.send("client-created", event.getClienteId(), event);
     }
 
     // Método para publicar el evento al eliminar el cliente
     public void publishClientDeleted(String clienteId) {
         ClientDeletedEvent event = new ClientDeletedEvent(clienteId);
         log.info("Publicando evento de cliente eliminado: {}", event);
-        clientDeletedEventKafkaTemplate.send("client-deleted-events", clienteId, event);
+        clientDeletedEventKafkaTemplate.send("client-deleted", clienteId, event);
     }
 }

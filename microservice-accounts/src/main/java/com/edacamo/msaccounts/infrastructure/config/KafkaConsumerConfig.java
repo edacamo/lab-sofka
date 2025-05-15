@@ -1,10 +1,11 @@
 package com.edacamo.msaccounts.infrastructure.config;
 
 import com.edacamo.msaccounts.application.events.ClientDeletedEvent;
-import com.edacamo.msaccounts.application.events.ClientEvent;
+import com.edacamo.msaccounts.application.events.ClientCreatedEvent;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.common.serialization.StringDeserializer;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.annotation.EnableKafka;
@@ -23,15 +24,17 @@ import java.util.Map;
 @Configuration
 public class KafkaConsumerConfig {
 
-    private final String bootstrapAddress = "kafka:9092";
+    @Value("${spring.kafka.bootstrap-servers}")
+    private String bootstrapAddress;
 
+    // Consumer para ClientCreatedEvent
     @Bean
-    public ConsumerFactory<String, ClientEvent> consumerFactory() {
+    public ConsumerFactory<String, ClientCreatedEvent> consumerFactory() {
         Map<String, Object> props = new HashMap<>();
 
         // Configuración básica
         props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapAddress);
-        props.put(ConsumerConfig.GROUP_ID_CONFIG, "ms-accounts-client-snapshot");
+        props.put(ConsumerConfig.GROUP_ID_CONFIG, "ms-accounts-client-created");
 
         // Usar ErrorHandlingDeserializer como wrapper
         props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, ErrorHandlingDeserializer.class);
@@ -43,7 +46,7 @@ public class KafkaConsumerConfig {
 
         // Configurar JsonDeserializer
         props.put(JsonDeserializer.TRUSTED_PACKAGES, "com.edacamo.msaccounts.application.events");
-        props.put(JsonDeserializer.VALUE_DEFAULT_TYPE, ClientEvent.class.getName());
+        props.put(JsonDeserializer.VALUE_DEFAULT_TYPE, ClientCreatedEvent.class.getName());
         props.put(JsonDeserializer.USE_TYPE_INFO_HEADERS, false); // ← importante si tu Producer no usa headers
 
         log.info("Creating consumer factory******");
@@ -51,13 +54,13 @@ public class KafkaConsumerConfig {
         return new DefaultKafkaConsumerFactory<>(
                 props,
                 new StringDeserializer(),
-                new ErrorHandlingDeserializer<>(new JsonDeserializer<>(ClientEvent.class, false))
+                new ErrorHandlingDeserializer<>(new JsonDeserializer<>(ClientCreatedEvent.class, false))
         );
     }
 
     @Bean
-    public ConcurrentKafkaListenerContainerFactory<String, ClientEvent> kafkaListenerContainerFactory() {
-        ConcurrentKafkaListenerContainerFactory<String, ClientEvent> factory = new ConcurrentKafkaListenerContainerFactory<>();
+    public ConcurrentKafkaListenerContainerFactory<String, ClientCreatedEvent> kafkaListenerContainerFactory() {
+        ConcurrentKafkaListenerContainerFactory<String, ClientCreatedEvent> factory = new ConcurrentKafkaListenerContainerFactory<>();
         factory.setConsumerFactory(consumerFactory());
 
         // Puedes agregar un DefaultErrorHandler si quieres manejar errores específicos
@@ -66,7 +69,7 @@ public class KafkaConsumerConfig {
         return factory;
     }
 
-    // Consumidor para ClientDeletedEvent
+    // Consumer para ClientDeletedEvent
     @Bean
     public ConsumerFactory<String, ClientDeletedEvent> clientDeletedEventConsumerFactory() {
         Map<String, Object> props = new HashMap<>();

@@ -36,7 +36,7 @@ public class AccountMovementVerificationTest {
         accountRequest.setNumeroCuenta("123456789");
         accountRequest.setTipo("AHORROS");
         accountRequest.setSaldoInicial(new BigDecimal("1000"));
-        accountRequest.setClienteId("epenaranda");
+        accountRequest.setClienteId("jperez");
         accountRequest.setEstado(true);
 
         // Act: Crear la cuenta
@@ -49,11 +49,19 @@ public class AccountMovementVerificationTest {
         assertEquals("AHORROS", createdAccount.getTipo());
 
         // Act: Agregar un movimiento de tipo 'C' (Crédito)
-        MovementRequest movementRequest = new MovementRequest(null, "C", new BigDecimal("200"), "123456789");
+        MovementRequest movementRequest = new MovementRequest(
+                null,
+                "C",
+                new BigDecimal("200"),
+                "123456789");
         movementsService.createMovimiento(movementRequest);
 
         // Act: Agregar un movimiento de tipo 'D' (Débito)
-         movementRequest = new MovementRequest(null, "D", new BigDecimal("100"), "123456789");
+        movementRequest = new MovementRequest(
+                null,
+                "D",
+                new BigDecimal("100"),
+                "123456789");
         movementsService.createMovimiento(movementRequest);
 
         // Assert: Verificar que los movimientos fueron agregados a la cuenta

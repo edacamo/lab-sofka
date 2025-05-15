@@ -17,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -35,7 +36,7 @@ public class MovementsServiceImpl implements MovementsService {
     @Transactional
     public Movements createMovimiento(MovementRequest movimientoRequest) {
         Account account = accountRepository.findByNumeroCuenta(movimientoRequest.getNumeroCuenta())
-                .orElseThrow(() -> new EmptyResultDataAccessException("Cuenta no encontrada",1));
+                .orElseThrow(() -> new EmptyResultDataAccessException("Cuenta no encontrada", 1));
 
         if (!Boolean.TRUE.equals(account.getEstado())) {
             throw new RuntimeException("No se pueden realizar movimientos en una cuenta inactiva.");
@@ -46,21 +47,33 @@ public class MovementsServiceImpl implements MovementsService {
             throw new RuntimeException("Tipo de movimiento no válido. Debe ser D (Debito) o C (Credito).");
         }
 
-        //Retiro o Deposito
+        BigDecimal saldoInicial = account.getSaldoInicial();
+
+        //Obtiene saldo (Retiro o Deposito)
         BigDecimal balance = getBalance(movimientoRequest, account);
 
         account.setSaldoInicial(balance);
         accountRepository.save(account);
 
-        Movements movimiento = new Movements();
-        movimiento.setTipoMovimiento(movimientoRequest.getTipoMovimiento());
-        movimiento.setValor(movimientoRequest.getValor());
-        movimiento.setSaldo(balance);
+        String description;
 
-        movimiento.setFecha(movimientoRequest.getFecha() != null ? movimientoRequest.getFecha() : LocalDateTime.now());
-        movimiento.setAccount(account);
+        if (movimientoRequest.getTipoMovimiento().equalsIgnoreCase(WITHDRAWAL)) {
+            description = "Retiro de " + movimientoRequest.getValor();
+        } else {
+            description = "Deposito de " + movimientoRequest.getValor();
+        }
 
-        return this.movementsRepository.save(movimiento);
+        Movements movement = new Movements();
+        movement.setTipoMovimiento(movimientoRequest.getTipoMovimiento());
+        movement.setDescripcion(description);
+        movement.setSaldoInicial(saldoInicial);
+        movement.setValor(movimientoRequest.getValor());
+        movement.setSaldo(balance);
+
+        movement.setFecha(movimientoRequest.getFecha() != null ? movimientoRequest.getFecha() : LocalDateTime.now());
+        movement.setAccount(account);
+
+        return this.movementsRepository.save(movement);
     }
 
     @Override
@@ -73,14 +86,14 @@ public class MovementsServiceImpl implements MovementsService {
     public void deleteMovimiento(Long movimientoId) {
 
         Movements movimiento = this.movementsRepository.findById(movimientoId)
-                .orElseThrow(() -> new EmptyResultDataAccessException("Movimiento no encontrado",1));
+                .orElseThrow(() -> new EmptyResultDataAccessException("Movimiento no encontrado", 1));
 
         Account account = movimiento.getAccount();
 
         List<Movements> movimientos = this.movementsRepository.findByCuentaId(account.getId());
 
         if (movimientos.isEmpty()) {
-            throw new EmptyResultDataAccessException("No hay movimientos registrados para esta cuenta.",1);
+            throw new EmptyResultDataAccessException("No hay movimientos registrados para esta cuenta.", 1);
         }
 
         Movements ultimoMovimiento = movimientos.get(movimientos.size() - 1);
@@ -99,7 +112,7 @@ public class MovementsServiceImpl implements MovementsService {
     public Movements updateMovimiento(Long id, Movements movimientoDetails) {
 
         Movements movimiento = this.movementsRepository.findById(id)
-                .orElseThrow(() -> new EmptyResultDataAccessException("Movimiento no encontrado",1));
+                .orElseThrow(() -> new EmptyResultDataAccessException("Movimiento no encontrado", 1));
 
         movimiento.setFecha(movimientoDetails.getFecha());
         movimiento.setTipoMovimiento(movimientoDetails.getTipoMovimiento());
@@ -123,13 +136,15 @@ public class MovementsServiceImpl implements MovementsService {
         List<TransactionReportResponse> responses = new ArrayList<>();
 
         if (!movs.isEmpty()) {
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
+
             for (Movements mov : movs) {
                 TransactionReportResponse r = new TransactionReportResponse(
-                        mov.getFecha(),
+                        mov.getFecha().format(formatter),
                         mov.getAccount().getClient().getNombre(),
                         mov.getAccount().getNumeroCuenta(),
                         mov.getAccount().getTipo(),
-                        mov.getAccount().getSaldoInicial(),
+                        mov.getSaldoInicial(),
                         mov.getAccount().getEstado(),
                         mov.getValor(),
                         mov.getSaldo()
@@ -141,17 +156,18 @@ public class MovementsServiceImpl implements MovementsService {
         return responses;
     }
 
-    private static BigDecimal getBalance(MovementRequest movimientoRequest, Account account) {
-        BigDecimal nuevoSaldo;
-        if (movimientoRequest.getTipoMovimiento().equalsIgnoreCase(WITHDRAWAL)) {
-            nuevoSaldo = account.getSaldoInicial().subtract(movimientoRequest.getValor().abs());
+    private static BigDecimal getBalance(MovementRequest movementRequest, Account account) {
+        BigDecimal balance;
+
+        if (movementRequest.getTipoMovimiento().equalsIgnoreCase(WITHDRAWAL)) {
+            balance = account.getSaldoInicial().subtract(movementRequest.getValor().abs());
         } else {
-            nuevoSaldo = account.getSaldoInicial().add(movimientoRequest.getValor());
+            balance = account.getSaldoInicial().add(movementRequest.getValor());
         }
 
-        if (movimientoRequest.getTipoMovimiento().equalsIgnoreCase(WITHDRAWAL) && nuevoSaldo.compareTo(BigDecimal.ZERO) < 0) {
+        if (movementRequest.getTipoMovimiento().equalsIgnoreCase(WITHDRAWAL) && balance.compareTo(BigDecimal.ZERO) < 0) {
             throw new InsufficientFundsException("Saldo insuficiente para realizar el retiro");
         }
-        return nuevoSaldo;
+        return balance;
     }
 }

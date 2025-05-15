@@ -3,18 +3,13 @@ package com.edacamo.mspersons.application.services;
 import com.edacamo.mspersons.application.events.ClientEvent;
 import com.edacamo.mspersons.domain.entities.Client;
 import com.edacamo.mspersons.domain.repositories.ClientRepository;
-import com.edacamo.mspersons.infrastructure.exception.ResponseCode;
 import com.edacamo.mspersons.interfaces.dto.RegisterRequest;
 import com.edacamo.mspersons.interfaces.dto.RegisterResponse;
-import com.edacamo.mspersons.interfaces.dto.ResponseGeneric;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.Optional;
 
 @Slf4j
 @Service
@@ -22,15 +17,14 @@ public class RegistrationServiceImpl implements RegistrationService {
 
     final private ClientRepository clientRepository;
     private final PasswordEncoder passwordEncoder;
-    private final PublishClientCreatedEvent publishClientCreatedEvent;
+    private final PublishClientEvent publishClientEvent;
 
     public RegistrationServiceImpl(ClientRepository clientRepository,
                                    PasswordEncoder passwordEncoder,
-                                   KafkaTemplate<String, ClientEvent> kafkaTemplate,
-                                   PublishClientCreatedEvent publishClientCreatedEvent) {
+                                   PublishClientEvent publishClientEvent) {
         this.clientRepository = clientRepository;
         this.passwordEncoder = passwordEncoder;
-        this.publishClientCreatedEvent = publishClientCreatedEvent;
+        this.publishClientEvent = publishClientEvent;
     }
 
     @Transactional
@@ -40,20 +34,20 @@ public class RegistrationServiceImpl implements RegistrationService {
             return new RegisterResponse(String.format("El usuario %s ya existe.", request.getUsuario()));
         }
 
-        Client cliente = new Client();
-        cliente.setClienteId(request.getUsuario());
-        cliente.setContrasenia(passwordEncoder.encode(request.getPassword()));
-        cliente.setEstado(true);
+        Client client = new Client();
+        client.setClienteId(request.getUsuario());
+        client.setContrasenia(passwordEncoder.encode(request.getPassword()));
+        client.setEstado(true);
 
-        cliente.setNombre(request.getNombre());
-        cliente.setGenero(request.getGenero());
-        cliente.setEdad(request.getEdad());
-        cliente.setIdentificacion(request.getIdentificacion());
-        cliente.setDireccion(request.getDireccion());
-        cliente.setTelefono(request.getTelefono());
+        client.setNombre(request.getNombre());
+        client.setGenero(request.getGenero());
+        client.setEdad(request.getEdad());
+        client.setIdentificacion(request.getIdentificacion());
+        client.setDireccion(request.getDireccion());
+        client.setTelefono(request.getTelefono());
 
-        clientRepository.save(cliente);
-        this.publishClientCreatedEvent.publishClientCreated(cliente);//Produce el mensaje Kafka
+        clientRepository.save(client);
+        this.publishClientEvent.publishClientCreated(client);//Produce el mensaje Kafka
         return new RegisterResponse("Usuario registrado correctamente");
     }
 
@@ -87,7 +81,7 @@ public class RegistrationServiceImpl implements RegistrationService {
         }
 
         clientRepository.delete(client); // Esto elimina cliente + persona (por herencia JOINED)
-        this.publishClientCreatedEvent.publishClientDeleted(clienteId);
+        this.publishClientEvent.publishClientDeleted(clienteId);
         return new RegisterResponse("Cliente eliminado correctamente.");
     }
 }

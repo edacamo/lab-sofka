@@ -12,13 +12,13 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class TransactionReportResponse {
 
-    private LocalDateTime fecha;
+    private String fecha;
 
     private String cliente;
 
     private String numeroCuenta;
 
-    private String tipoCuenta;
+    private String tipo;
 
     private BigDecimal saldoInicial;
 

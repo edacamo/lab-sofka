@@ -5,16 +5,22 @@ import com.edacamo.msaccounts.infrastructure.exception.ResponseCode;
 import com.edacamo.msaccounts.interfaces.dto.AccountRegisterRequest;
 import com.edacamo.msaccounts.interfaces.dto.ResponseGeneric;
 import com.edacamo.msaccounts.services.AccountService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 import java.util.List;
 
 @Slf4j
 @RestController
 @RequestMapping("cuentas")
+@Tag(name = "Cuentas", description = "Operaciones relacionadas con la gestión de cuentas")
 public class AccountController {
 
     private final AccountService accountService;
@@ -23,6 +29,10 @@ public class AccountController {
         this.accountService = accountService;
     }
 
+    @Operation(summary = "Listar cuentas", description = "Obtiene un listado de todas las cuentas registradas")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Listado obtenido correctamente")
+    })
     @GetMapping
     public ResponseEntity<ResponseGeneric<List<Account>>> list() {
         List<Account> clients = this.accountService.getAllCuentas();
@@ -35,6 +45,12 @@ public class AccountController {
         return ResponseEntity.ok(response);
     }
 
+    @Operation(summary = "Registrar cuenta", description = "Registra una nueva cuenta en el sistema")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Cuenta registrada exitosamente"),
+            @ApiResponse(responseCode = "400", description = "Datos inválidos o cuenta nula"),
+            @ApiResponse(responseCode = "500", description = "Error interno del servidor")
+    })
     @PostMapping("/registrar")
     public ResponseEntity<ResponseGeneric<Account>> createAccount(@RequestBody AccountRegisterRequest account) {
         if(account != null) {
@@ -60,6 +76,13 @@ public class AccountController {
         }
     }
 
+    @Operation(summary = "Actualizar cuenta", description = "Actualiza los datos de una cuenta existente por ID")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Cuenta actualizada exitosamente"),
+            @ApiResponse(responseCode = "400", description = "Datos inválidos o cuenta nula"),
+            @ApiResponse(responseCode = "404", description = "Cuenta no encontrada"),
+            @ApiResponse(responseCode = "500", description = "Error interno del servidor")
+    })
     @PutMapping("/actualizar/{id}")
     public ResponseEntity<ResponseGeneric<Account>> updateAccount(@RequestBody AccountRegisterRequest account, @PathVariable Long id) {
         if(account != null) {
@@ -84,6 +107,12 @@ public class AccountController {
         }
     }
 
+    @Operation(summary = "Eliminar cuenta", description = "Elimina una cuenta del sistema por su ID")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Cuenta eliminada exitosamente"),
+            @ApiResponse(responseCode = "404", description = "Cuenta no encontrada"),
+            @ApiResponse(responseCode = "500", description = "Error interno del servidor")
+    })
     @DeleteMapping("/eliminar/{id}")
     public ResponseEntity<ResponseGeneric<String>> deleteAccount(@PathVariable Long id) {
         try{

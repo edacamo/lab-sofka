@@ -29,8 +29,14 @@ public class Movements {
     )
     private String tipoMovimiento;
 
+    private String descripcion;
+
+    @Column(name = "saldo_inicial")
+    private BigDecimal saldoInicial;
+
     private BigDecimal valor;
 
+    @Column(name = "saldo_disponible")
     private BigDecimal saldo;
 
     @ManyToOne

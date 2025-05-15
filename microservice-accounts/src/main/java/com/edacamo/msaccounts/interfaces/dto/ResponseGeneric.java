@@ -7,15 +7,17 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 @AllArgsConstructor
 @Getter
 @Setter
-public class ResponseGeneric<T>  {
+public class ResponseGeneric<T> {
+
 
     private boolean success;
     private int statusCode;
-    private LocalDateTime timestamp;
+    private String timestamp;
     private String message;
     private String error;
     private T data;
@@ -28,7 +30,9 @@ public class ResponseGeneric<T>  {
         this.error = error;
         this.data = data;
         this.errorCode = errorCode;
-        this.timestamp = LocalDateTime.now();
+
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
+        this.timestamp = LocalDateTime.now().format(formatter);
     }
 
     public static <T> ResponseGeneric<T> success(int statusCode, ResponseCode responseCode, T data) {

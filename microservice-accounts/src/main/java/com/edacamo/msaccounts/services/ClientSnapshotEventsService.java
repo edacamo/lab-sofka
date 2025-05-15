@@ -1,7 +1,7 @@
 package com.edacamo.msaccounts.services;
 
 import com.edacamo.msaccounts.application.events.ClientDeletedEvent;
-import com.edacamo.msaccounts.application.events.ClientEvent;
+import com.edacamo.msaccounts.application.events.ClientCreatedEvent;
 import com.edacamo.msaccounts.domain.entities.ClientSnapshot;
 import com.edacamo.msaccounts.domain.repositories.ClientSnapshotRepository;
 import lombok.extern.slf4j.Slf4j;
@@ -18,13 +18,20 @@ public class ClientSnapshotEventsService {
     @Autowired
     private ClientSnapshotRepository repository;
 
-    @KafkaListener(topics = "client-created-events",
+    @KafkaListener(topics = "client-created",
             containerFactory = "kafkaListenerContainerFactory",
-            groupId = "ms-accounts-client-snapshot-created")
-    public void consume(ClientEvent event) {
-        try{
+            groupId = "ms-accounts-client-created")
+    public void consume(ClientCreatedEvent event) {
+        try {
             // Log para ver el contenido del evento recibido
-            log.info("Received ClientEvent: clienteId={}, nombre={}, edad={}, identificacion={}, direccion:{}, telefono: {}, estado={}",
+            log.info("Received ClientEvent: " +
+                            "clienteId={}, " +
+                            "nombre={}, " +
+                            "edad={}, " +
+                            "identificacion={}, " +
+                            "direccion:{}, " +
+                            "telefono: {}, " +
+                            "estado={}",
                     event.getClienteId(), event.getNombre(), event.getEdad(), event.getIdentificacion(),
                     event.getDireccion(), event.getTelefono(), event.getEstado());
 
@@ -44,7 +51,7 @@ public class ClientSnapshotEventsService {
 
             // Log para confirmar que el snapshot fue guardado
             log.info("ClientSnapshot for clienteId={} saved successfully", event.getClienteId());
-        } catch (Exception e){
+        } catch (Exception e) {
             log.error("Error while processing ClientEvent with clienteId={}", event.getClienteId(), e);
             // Aquí puedes aplicar alguna lógica extra si deseas: alertas, reintentos, DLQ, etc.
         }
@@ -52,22 +59,22 @@ public class ClientSnapshotEventsService {
 
 
     // Consumidor para ClientDeletedEvent (cuando se elimina un cliente)
-    @KafkaListener(topics = "client-deleted-events",
+    @KafkaListener(topics = "client-deleted",
             containerFactory = "clientDeletedEventKafkaListenerContainerFactory",
-            groupId = "ms-accounts-client-snapshop-deleted")
+            groupId = "ms-accounts-client-deleted")
     public void consume(ClientDeletedEvent event) {
         try {
             // Log para ver el contenido del evento recibido
-            log.info("Received ClientDeletedEvent: clienteId={}", event.getClienteId());
+            log.info("Received ClientDeletedEvent: clientId={}", event.getClienteId());
 
             // Se obtiene informacion del cliente desde el snapshot
             Optional<ClientSnapshot> snapshot = repository.findByClienteId(event.getClienteId());
 
             if (snapshot.isPresent()) {
                 repository.delete(snapshot.get());
-                log.info("ClientSnapshot for clienteId={} deleted successfully", event.getClienteId());
+                log.info("ClientSnapshot for clientId={} deleted successfully", event.getClienteId());
             } else {
-                log.warn("No ClientSnapshot found for clienteId={}", event.getClienteId());
+                log.warn("No ClientSnapshot found for clientId={}", event.getClienteId());
             }
         } catch (Exception e) {
             log.error("Error while processing ClientDeletedEvent with clienteId={}", event.getClienteId(), e);

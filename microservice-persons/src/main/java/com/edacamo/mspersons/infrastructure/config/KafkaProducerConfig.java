@@ -17,7 +17,7 @@ import java.util.Map;
 @Configuration
 public class KafkaProducerConfig {
 
-    private final String bootstrapAddress = "kafka:9092";
+    private final String bootstrapAddress = "localhost:9092";
 
     @Bean
     public <T> ProducerFactory<String, T> producerFactory() {
@@ -28,12 +28,7 @@ public class KafkaProducerConfig {
         return new DefaultKafkaProducerFactory<>(configProps);
     }
 
-//    @Bean
-//    public <T> KafkaTemplate<String, T> kafkaTemplate(ProducerFactory<String, T> producerFactory) {
-//        return new KafkaTemplate<>(producerFactory);
-//    }
-
-    // KafkaTemplate para ClientEvent
+    // KafkaTemplate para ClientCreatedEvent
     @Bean
     public KafkaTemplate<String, ClientEvent> clientEventKafkaTemplate(ProducerFactory<String, ClientEvent> producerFactory) {
         return new KafkaTemplate<>(producerFactory);

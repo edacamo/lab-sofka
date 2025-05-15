@@ -1,6 +1,6 @@
 package com.edacamo.mspersons.services;
 
-import com.edacamo.mspersons.application.services.PublishClientCreatedEvent;
+import com.edacamo.mspersons.application.services.PublishClientEvent;
 import com.edacamo.mspersons.application.services.RegistrationServiceImpl;
 import com.edacamo.mspersons.domain.entities.Client;
 import com.edacamo.mspersons.domain.repositories.ClientRepository;
@@ -23,7 +23,7 @@ public class RegistrationServiceImplTest {
     private ClientRepository clientRepository;
 
     @Mock
-    private PublishClientCreatedEvent publishClientCreatedEvent;
+    private PublishClientEvent publishClientCreatedEvent;
 
     @Mock
     private  PasswordEncoder passwordEncoder;
